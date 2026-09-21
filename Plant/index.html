@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plant SYS - Enterprise Traceable Maintenance</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="flex h-screen overflow-hidden text-xs">
+
+    <!-- GLOBAL DATALISTS -->
+    <datalist id="dl-jobsite"></datalist>
+    <datalist id="dl-problem"></datalist>
+    <datalist id="dl-vendor"></datalist>
+    <datalist id="dl-warehouse"></datalist>
+    <datalist id="dl-spec"></datalist>
+    
+    <datalist id="dl-item-names">
+        <option value="Oli Engine Komatsu 15W-40">
+        <option value="Filter Oli Engine">
+        <option value="Filter Solar Primary">
+        <option value="Filter Solar Secondary">
+        <option value="Oli Hydraulic ISO 68">
+        <option value="Grease High Temperature">
+        <option value="Gasket Head Cylinder">
+        <option value="Air Filter Outer">
+        <option value="Air Filter Inner">
+        <option value="Water Pump Assembly">
+    </datalist>
+
+    <!-- LOGIN SCREEN -->
+    <div id="login-screen" class="fixed inset-0 flex items-center justify-center bg-[#030712] z-50 transition-opacity duration-500">
+        <div class="glass-card-ios w-11/12 max-w-sm p-8 text-center space-y-4">
+            <div class="w-14 h-14 bg-zinc-800 rounded-2xl flex items-center justify-center font-black text-white text-2xl mx-auto shadow-lg border border-zinc-700">⚡</div>
+            <div>
+                <h1 class="text-2xl font-black text-white tracking-wider">PLANT SYS</h1>
+                <p class="text-zinc-400 text-xs mt-1">Mining Maintenance Enterprise</p>
+            </div>
+            <form onsubmit="event.preventDefault(); handleLogin();" class="space-y-3 pt-2">
+                <input type="text" id="login_user" class="input-ios" placeholder="Username" value="admin" required>
+                <input type="password" id="login_pass" class="input-ios" placeholder="Password" value="admin123" required>
+                <button type="submit" class="btn-ios-primary w-full py-2.5">Sign In</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN APP SCREEN -->
+    <div id="app-screen" class="hidden flex-1 flex h-full w-full overflow-hidden">
+        
+        <!-- SIDEBAR DESKTOP -->
+        <aside class="hidden md:flex w-64 bg-zinc-950 border-r border-zinc-800 flex-col justify-between shrink-0">
+            <div>
+                <div class="p-5 border-b border-zinc-800 flex items-center space-x-3">
+                    <div class="w-9 h-9 bg-zinc-800 rounded-xl flex items-center justify-center font-black text-white text-xl border border-zinc-700">⚡</div>
+                    <div>
+                        <h1 class="font-extrabold text-sm tracking-wider text-white">PLANT MASTER</h1>
+                        <p class="text-[9px] text-zinc-400 font-medium">MINING OPERATIONS</p>
+                    </div>
+                </div>
+                <nav class="p-3 space-y-1 mt-2">
+                    <a href="#" id="nav-dashboard" onclick="switchView('dashboard')" class="nav-link active flex items-center space-x-3 px-4 py-2.5 rounded-lg font-bold text-zinc-400 hover:bg-zinc-900 transition"><span>📊</span><span>Dashboard Executive</span></a>
+                    <a href="#" id="nav-service" onclick="switchView('service')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>⚙️</span><span>Service Schedule</span></a>
+                    <a href="#" id="nav-kanban" onclick="switchView('kanban')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>📋</span><span>Work Order Flow</span></a>
+                    <a href="#" id="nav-mr" onclick="switchView('mr')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>📝</span><span>Material Request (MR)</span></a>
+                    <a href="#" id="nav-purchasing" onclick="switchView('purchasing')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>🛒</span><span>Barang Masuk / Beli</span></a>
+                    <a href="#" id="nav-partinstal" onclick="switchView('partinstal')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>🛠️</span><span>Part Instalasi</span></a>
+                    <a href="#" id="nav-inventory" onclick="switchView('inventory')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>📦</span><span>Database Barang</span></a>
+                    <a href="#" id="nav-master" onclick="switchView('master')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>⚙️</span><span>Master Data</span></a>
+                    <a href="#" id="nav-history" onclick="switchView('history')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>🗂️</span><span>Histori & Laporan</span></a>
+                    <a href="#" id="nav-users" onclick="switchView('users')" class="nav-link flex items-center space-x-3 px-4 py-2.5 rounded-lg text-zinc-400 hover:bg-zinc-900 transition font-bold"><span>👤</span><span>Management User</span></a>
+                </nav>
+            </div>
+            <div class="p-4 border-t border-zinc-800 text-[10px] text-zinc-500 text-center">
+                System v6.0 Traceable Edition
+            </div>
+        </aside>
+
+        <!-- CONTENT WRAPPER -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden">
+            
+            <!-- TOPBAR -->
+            <header class="h-14 bg-zinc-950/80 border-b border-zinc-800 px-4 md:px-6 flex items-center justify-between sticky top-0 z-30 backdrop-blur-md shrink-0">
+                <h1 id="topbar-title" class="font-extrabold text-sm md:text-base text-white">DASHBOARD EXECUTIVE</h1>
+                <div class="flex items-center space-x-3">
+                    <span id="user-display-badge" class="bg-zinc-900 border border-zinc-800 text-zinc-300 font-bold px-3 py-1 rounded-full text-[10px]">Admin</span>
+                    <button onclick="openModalWO()" class="btn-ios-primary text-xs !py-1.5">+ Buat WO Baru</button>
+                    <button onclick="handleLogout()" class="text-rose-400 font-bold px-2 py-1 hover:text-rose-300">Logout</button>
+                </div>
+            </header>
+
+            <!-- MAIN VIEW CONTAINER -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6 space-y-6">
+                
+                <!-- 1. VIEW: DASHBOARD EXECUTIVE -->
+                <div id="view-dashboard" class="space-y-6 block">
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+                        <div onclick="scrollToSection('dash-sec-bd')" class="glass-card-ios glass-card-clickable p-3.5 border-l-4 border-rose-500">
+                            <p class="text-[10px] font-extrabold text-zinc-400 uppercase">Active Breakdown</p>
+                            <h2 class="text-xl md:text-2xl font-black text-white mt-1" id="dash-kpi-bd">0 Unit</h2>
+                            <span class="text-[9px] text-zinc-400 font-semibold">Lihat Detail WO 👇</span>
+                        </div>
+                        <div onclick="switchView('service')" class="glass-card-ios glass-card-clickable p-3.5 border-l-4 border-amber-500">
+                            <p class="text-[10px] font-extrabold text-zinc-400 uppercase">Service Due / Overdue</p>
+                            <h2 class="text-xl md:text-2xl font-black text-white mt-1" id="dash-kpi-service-due">0 Unit</h2>
+                            <span class="text-[9px] text-zinc-400 font-semibold">Ke Monitoring Service ➔</span>
+                        </div>
+                        <div onclick="scrollToSection('dash-sec-rfu')" class="glass-card-ios glass-card-clickable p-3.5 border-l-4 border-emerald-500">
+                            <p class="text-[10px] font-extrabold text-zinc-400 uppercase">RFU / Closed WO</p>
+                            <h2 class="text-xl md:text-2xl font-black text-white mt-1" id="dash-kpi-closed">0 WO</h2>
+                            <span class="text-[9px] text-zinc-400 font-semibold">Lihat List RFU 👇</span>
+                        </div>
+                        <div onclick="switchView('inventory')" class="glass-card-ios glass-card-clickable p-3.5 border-l-4 border-sky-500">
+                            <p class="text-[10px] font-extrabold text-zinc-400 uppercase">Total Stock Value</p>
+                            <h2 class="text-xl md:text-2xl font-black text-white mt-1" id="dash-kpi-stockval">Rp 0</h2>
+                            <span class="text-[9px] text-zinc-400 font-semibold">Database Stok ➔</span>
+                        </div>
+                        <div class="glass-card-ios p-3.5 border-l-4 border-indigo-500 col-span-2 md:col-span-1">
+                            <p class="text-[10px] font-extrabold text-zinc-400 uppercase">Plant PA / MA</p>
+                            <h2 class="text-xl md:text-2xl font-black text-white mt-1">92.8 %</h2>
+                            <span class="text-[9px] text-zinc-400 font-semibold">Target > 90%</span>
+                        </div>
+                    </div>
+
+                    <!-- MONITORING SERVICE SCHEDULE WIDGET -->
+                    <div class="glass-card-ios p-5 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-extrabold text-sm text-white uppercase tracking-wide">Monitoring Service Unit (HM & Tanggal)</h3>
+                                <p class="text-[10px] text-zinc-400">Pengecekan jadwal service otomatis & ketersediaan sparepart</p>
+                            </div>
+                            <button onclick="switchView('service')" class="btn-ios-secondary text-xs">Kelola Service Schedule ➔</button>
+                        </div>
+                        <div id="dash-service-summary-list" class="grid grid-cols-1 md:grid-cols-2 gap-3"></div>
+                    </div>
+
+                    <!-- CHARTS & SUMMARY -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="glass-card-ios p-4 lg:col-span-5">
+                            <h3 class="font-bold text-zinc-200 mb-3">Downtime Trend (Jam BD)</h3>
+                            <div class="h-48"><canvas id="trendChart"></canvas></div>
+                        </div>
+                        <div class="glass-card-ios p-4 lg:col-span-4 flex flex-col justify-between">
+                            <h3 class="font-bold text-zinc-200 mb-2">BD per Komponen</h3>
+                            <div class="h-44 flex justify-center"><canvas id="componentChart"></canvas></div>
+                        </div>
+                        <div class="glass-card-ios p-4 lg:col-span-3 space-y-3">
+                            <h3 class="font-bold text-zinc-200 border-b border-zinc-800 pb-2">WO Status Summary</h3>
+                            <div class="space-y-2">
+                                <div class="flex justify-between items-center p-2 bg-zinc-900/80 rounded-xl"><span class="text-zinc-300 font-bold">🔴 OPEN</span><span class="font-black text-white text-sm" id="sum-open">0</span></div>
+                                <div class="flex justify-between items-center p-2 bg-zinc-900/80 rounded-xl"><span class="text-zinc-300 font-bold">🔵 IN PROGRESS</span><span class="font-black text-white text-sm" id="sum-prog">0</span></div>
+                                <div class="flex justify-between items-center p-2 bg-zinc-900/80 rounded-xl"><span class="text-zinc-300 font-bold">🟡 WAITING PART</span><span class="font-black text-white text-sm" id="sum-wait">0</span></div>
+                                <div class="flex justify-between items-center p-2 bg-zinc-900/80 rounded-xl"><span class="text-zinc-300 font-bold">🟢 CLOSE (RFU)</span><span class="font-black text-white text-sm" id="sum-close">0</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- LIST DASHBOARD: BREAKDOWN LIST & RFU LIST -->
+                    <div class="grid grid-cols-1 gap-6">
+                        <div id="dash-sec-bd" class="glass-card-ios p-5 border-t-2 border-t-zinc-600 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-extrabold text-sm text-white uppercase tracking-wide">Daftar WO Active Breakdown</h3>
+                                    <p class="text-[10px] text-zinc-400">Tindakan cepat perbaikan unit</p>
+                                </div>
+                                <button onclick="openModalWO()" class="btn-ios-primary text-xs">+ WO Baru</button>
+                            </div>
+                            <div id="dash-list-bd" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                        </div>
+
+                        <div id="dash-sec-rfu" class="glass-card-ios p-5 border-t-2 border-t-zinc-600 space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h3 class="font-extrabold text-sm text-white uppercase tracking-wide">Daftar WO Selesai / RFU</h3>
+                                    <p class="text-[10px] text-zinc-400">Unit siap beroperasi kembali</p>
+                                </div>
+                                <span class="text-xs bg-zinc-900 text-zinc-300 border border-zinc-700 px-3 py-1 rounded-full font-bold" id="dash-cnt-rfu">0 Unit RFU</span>
+                            </div>
+                            <div id="dash-list-rfu" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. VIEW: SERVICE SCHEDULE MODULE -->
+                <div id="view-service" class="hidden space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div>
+                            <h3 class="font-bold text-zinc-200">Pengaturan & Jadwal Service Unit</h3>
+                            <p class="text-[10px] text-zinc-400">Pencegahan dini melalui Periodical Maintenance (PM/PS)</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="exportModuleExcel('service_schedules')" class="btn-ios-secondary text-xs">📥 Export Excel</button>
+                            <button onclick="triggerImportExcel('service_schedules')" class="btn-ios-secondary text-xs">📤 Import Excel</button>
+                            <button onclick="openModalServiceSchedule()" class="btn-ios-primary text-xs">+ Buat Schedule Service</button>
+                        </div>
+                    </div>
+                    <div class="glass-card-ios p-0 scrollable-table-container">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-zinc-900/80 text-zinc-400 uppercase">
+                                <tr><th class="p-3">Kode Unit & Model</th><th class="p-3">Tipe Service</th><th class="p-3">Current / Next HM</th><th class="p-3">Hitung Mundur / Tanggal</th><th class="p-3">Kebutuhan Part & Stok</th><th class="p-3 text-center">Aksi</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-800/60" id="table-service"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 3. VIEW: KANBAN WORKFLOW -->
+                <div id="view-kanban" class="hidden h-full flex flex-col space-y-3">
+                    <div class="glass-card-ios p-3 flex flex-wrap gap-3 items-center justify-between">
+                        <h3 class="font-bold text-white">Filter Work Order Flow</h3>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <input type="month" id="wo-filter-month" onchange="renderUI()" class="input-ios !w-36">
+                            <input type="date" id="wo-filter-date" onchange="renderUI()" class="input-ios !w-36">
+                            <button onclick="resetWOFilter()" class="btn-ios-secondary text-xs">Reset Filter</button>
+                        </div>
+                    </div>
+                    <div class="kanban-container h-full">
+                        <div class="kanban-column"><h3 class="font-extrabold text-xs uppercase mb-3 text-zinc-300">1. OPEN (Breakdown)</h3><div id="kb-col-open" class="space-y-3"></div></div>
+                        <div class="kanban-column"><h3 class="font-extrabold text-xs uppercase mb-3 text-zinc-300">2. IN PROGRESS</h3><div id="kb-col-prog" class="space-y-3"></div></div>
+                        <div class="kanban-column"><h3 class="font-extrabold text-xs uppercase mb-3 text-zinc-300">3. WAITING PART</h3><div id="kb-col-wait" class="space-y-3"></div></div>
+                        <div class="kanban-column"><h3 class="font-extrabold text-xs uppercase mb-3 text-zinc-300">4. CLOSE (RFU)</h3><div id="kb-col-close" class="space-y-3"></div></div>
+                    </div>
+                </div>
+
+                <!-- 4. VIEW: MATERIAL REQUEST (MR) -->
+                <div id="view-mr" class="hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-zinc-200">Material Request (MR) Operational</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="toggleMRTableVisibility()" id="btn-toggle-mr-table" class="btn-ios-secondary text-xs">👁️ Sembunyikan Tabel MR</button>
+                            <button onclick="exportModuleExcel('material_requests')" class="btn-ios-secondary text-xs">📥 Export Excel</button>
+                            <button onclick="triggerImportExcel('material_requests')" class="btn-ios-secondary text-xs">📤 Import Excel</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div class="glass-card-ios p-0 lg:col-span-7 scrollable-table-container" id="mr-table-wrapper">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-zinc-900/80 text-zinc-400 uppercase">
+                                    <tr><th class="p-3">ID MR</th><th class="p-3">Ref WO / Unit</th><th class="p-3">Tgl & Pemohon</th><th class="p-3">Status</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-800/60" id="table-mr"></tbody>
+                            </table>
+                        </div>
+                        <div class="glass-card-ios p-5 lg:col-span-5 space-y-3">
+                            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                <h4 class="font-bold text-white text-sm" id="mr-form-title">Form Material Request</h4>
+                                <button onclick="resetMRForm()" class="text-xs text-zinc-400 font-bold hover:text-white">+ Baru / Reset</button>
+                            </div>
+                            <form onsubmit="event.preventDefault(); logicSaveMR();" class="space-y-3">
+                                <input type="hidden" id="mr_edit_index" value="-1">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">ID MR</label><input type="text" id="mr_id" readonly class="input-ios !bg-zinc-950 font-bold"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Tanggal</label><input type="date" id="mr_date" required class="input-ios"></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">NO WO Ref</label><select id="mr_nowo" class="input-ios w-full"></select></div>
+                                    <div><label class="block text-zinc-400 mb-1">Kode Unit</label><input type="text" id="mr_unit" class="input-ios" placeholder="ex: EX-200"></div>
+                                </div>
+                                <div><label class="block text-zinc-400 mb-1">Pemohon</label><input type="text" id="mr_reqby" value="Mekanik Plant" required class="input-ios"></div>
+                                
+                                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                                    <div class="flex justify-between items-center"><span class="font-bold text-zinc-300">Daftar Item MR</span><button type="button" onclick="addMRItemRow()" class="text-zinc-300 font-bold text-xs">+ Add Item</button></div>
+                                    <div id="mr-items-container" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                                </div>
+
+                                <div class="flex space-x-2 pt-2 border-t border-zinc-800">
+                                    <button type="submit" class="btn-ios-primary flex-1">Simpan / Update MR</button>
+                                    <button type="button" id="btn-delete-mr" onclick="logicDeleteMR()" class="btn-ios-danger hidden">Hapus</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. VIEW: BARANG MASUK / PURCHASING -->
+                <div id="view-purchasing" class="hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-zinc-200">Tabel Barang Masuk & Purchasing</h3>
+                            <p class="text-[10px] text-zinc-400">Pembelian barang mengupdate stok & harga terbaru di Database Barang</p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="toggleBMTableVisibility()" id="btn-toggle-bm-table" class="btn-ios-secondary text-xs">👁️ Sembunyikan Tabel</button>
+                            <button onclick="exportModuleExcel('barang_masuk')" class="btn-ios-secondary text-xs">📥 Export Excel</button>
+                            <button onclick="triggerImportExcel('barang_masuk')" class="btn-ios-secondary text-xs">📤 Import Excel</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div class="glass-card-ios p-0 lg:col-span-7 scrollable-table-container" id="bm-table-wrapper">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-zinc-900/80 text-zinc-400 uppercase">
+                                    <tr><th class="p-3">ID Trans / Tgl</th><th class="p-3">Item & Part No</th><th class="p-3">Vendor</th><th class="p-3 text-right">Qty & Harga (Rp)</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-800/60" id="table-barang-masuk"></tbody>
+                            </table>
+                        </div>
+                        <div class="glass-card-ios p-5 lg:col-span-5 space-y-3">
+                            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                <h4 class="font-bold text-white text-sm" id="bm-form-title">Form Input Barang Masuk</h4>
+                                <button onclick="resetBMForm()" class="text-xs text-zinc-400 font-bold hover:text-white">+ Baru / Reset</button>
+                            </div>
+                            <form onsubmit="event.preventDefault(); logicSaveBM();" class="space-y-3">
+                                <input type="hidden" id="bm_edit_index" value="-1">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">ID Trans / MR</label><input type="text" id="bm_idtrans" placeholder="ex: BM-001" required class="input-ios"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Tanggal</label><input type="date" id="bm_date" required class="input-ios"></div>
+                                </div>
+                                <div><label class="block text-zinc-400 mb-1">NO WO Referensi</label><select id="bm_nowo" class="input-ios w-full"></select></div>
+                                <div>
+                                    <label class="block text-zinc-400 mb-1">Pilih Master Item (Scan/Cari)</label>
+                                    <div class="flex space-x-1">
+                                        <select id="bm_itemid" onchange="autoFillItemInfoBM(this.value)" class="input-ios flex-1" required></select>
+                                        <button type="button" onclick="openBarcodeScanner('bm_itemid')" class="btn-ios-secondary px-3">📷</button>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-3 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">Part No</label><input type="text" id="bm_partno" readonly class="input-ios !bg-zinc-950"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Merk</label><input type="text" id="bm_merk" readonly class="input-ios !bg-zinc-950"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Satuan</label><input type="text" id="bm_satuan" readonly class="input-ios !bg-zinc-950"></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">Qty Beli</label><input type="number" id="bm_qty" value="1" min="1" required class="input-ios"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Harga Satuan Beli (Rp)</label><input type="number" id="bm_price" placeholder="100000" required class="input-ios"></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">Vendor / Supplier</label><input type="text" id="bm_vendor" list="dl-vendor" placeholder="Mitra Utama" required class="input-ios"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Warehouse</label><input type="text" id="bm_warehouse" list="dl-warehouse" value="Gudang Utama" required class="input-ios"></div>
+                                </div>
+                                <div class="flex space-x-2 pt-2 border-t border-zinc-800">
+                                    <button type="submit" class="btn-ios-primary flex-1">Simpan / Update BM</button>
+                                    <button type="button" id="btn-delete-bm" onclick="logicDeleteBM()" class="btn-ios-danger hidden">Hapus</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. VIEW: PART INSTALASI -->
+                <div id="view-partinstal" class="hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-zinc-200">Tabel Part Instalasi Ke Unit</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="exportModuleExcel('part_instal')" class="btn-ios-secondary text-xs">📥 Export Excel</button>
+                            <button onclick="triggerImportExcel('part_instal')" class="btn-ios-secondary text-xs">📤 Import Excel</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div class="glass-card-ios p-0 lg:col-span-7 scrollable-table-container">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-zinc-900/80 text-zinc-400 uppercase">
+                                    <tr><th class="p-3">Ref WO / Unit</th><th class="p-3">Item Terpasang</th><th class="p-3">Qty & Total Cost</th><th class="p-3">Mekanik & Tanggal</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-800/60" id="table-part-instal"></tbody>
+                            </table>
+                        </div>
+                        <div class="glass-card-ios p-5 lg:col-span-5 space-y-3">
+                            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                <h4 class="font-bold text-white text-sm" id="pi-form-title">Form Instalasi Part & Close WO</h4>
+                                <button onclick="resetPIForm()" class="text-xs text-zinc-400 font-bold hover:text-white">+ Baru / Reset</button>
+                            </div>
+                            <form onsubmit="event.preventDefault(); logicSaveInstal();" class="space-y-3">
+                                <input type="hidden" id="pi_edit_index" value="-1">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">NO WO Referensi</label><select id="pi_nowo" onchange="autoFillWOInfoPI(this.value)" class="input-ios w-full" required></select></div>
+                                    <div><label class="block text-zinc-400 mb-1">Kode Unit</label><input type="text" id="pi_unit" readonly class="input-ios !bg-zinc-950 font-bold"></div>
+                                </div>
+                                <div><label class="block text-zinc-400 mb-1">Tanggal Eksekusi</label><input type="date" id="pi_date" required class="input-ios"></div>
+                                
+                                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                                    <div class="flex justify-between items-center"><span class="font-bold text-zinc-300">Sparepart Dipasang</span><button type="button" onclick="addInstalPartRow()" class="text-zinc-300 font-bold text-xs">+ Part</button></div>
+                                    <div id="pi-parts-container" class="space-y-2 max-h-40 overflow-y-auto pr-1"></div>
+                                </div>
+                                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                                    <div class="flex justify-between items-center"><span class="font-bold text-zinc-300">Tim Eksekutor</span><button type="button" onclick="addInstalMpRow()" class="text-zinc-300 font-bold text-xs">+ Manpower</button></div>
+                                    <div id="pi-mp-container" class="space-y-2 max-h-32 overflow-y-auto pr-1"></div>
+                                </div>
+
+                                <div class="flex space-x-2 pt-2 border-t border-zinc-800">
+                                    <button type="submit" class="btn-ios-primary flex-1">Simpan, Close WO & Potong Stok</button>
+                                    <button type="button" id="btn-delete-pi" onclick="logicDeletePI()" class="btn-ios-danger hidden">Hapus</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. VIEW: DATABASE BARANG / INVENTORY -->
+                <div id="view-inventory" class="hidden space-y-4">
+                    <div class="flex justify-between items-center flex-wrap gap-2">
+                        <div>
+                            <h3 class="font-bold text-zinc-200">Database Barang (Warehouse Stock)</h3>
+                            <p class="text-[10px] text-zinc-400">Klik baris barang untuk melihat Log Transaksi & Form Edit</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="openBarcodeScanner('search-inv-barcode')" class="btn-ios-secondary text-xs">📷 Scan Barcode</button>
+                            <input type="text" id="search-inv-barcode" oninput="renderUI()" placeholder="Ketik / Scan Barcode..." class="input-ios !w-40">
+                            <select id="filter-inv-cat" onchange="renderUI()" class="input-ios !w-40">
+                                <option value="ALL">-- Semua Kategori --</option>
+                                <option value="Part Service">Part Service</option>
+                                <option value="Sparepart">Sparepart</option>
+                                <option value="Consumable Goods">Consumable Goods</option>
+                                <option value="Lubricant/Oil">Lubricant/Oil</option>
+                                <option value="General">General</option>
+                                <option value="Tools">Tools</option>
+                            </select>
+                            <button onclick="exportModuleExcel('inventory')" class="btn-ios-secondary text-xs">📥 Export</button>
+                            <button onclick="triggerImportExcel('inventory')" class="btn-ios-secondary text-xs">📤 Import</button>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div class="glass-card-ios p-0 lg:col-span-7 scrollable-table-container">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-zinc-900/80 text-zinc-400 uppercase">
+                                    <tr><th class="p-3">Foto</th><th class="p-3">Item ID / Barcode</th><th class="p-3">Nama Item & Part No</th><th class="p-3">Kategori</th><th class="p-3">Merk / Satuan</th><th class="p-3">Stok Gudang</th><th class="p-3 text-right">Harga Terkini</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-800/60" id="table-inventory"></tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="glass-card-ios p-5 lg:col-span-5 space-y-4">
+                            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                <h4 class="font-bold text-white text-sm" id="inv-form-title">Form Master Item Barang</h4>
+                                <button onclick="resetInvForm()" class="text-xs text-zinc-400 font-bold hover:text-white">+ Baru / Suggest ID</button>
+                            </div>
+                            
+                            <form onsubmit="event.preventDefault(); logicSaveInvForm();" class="space-y-3">
+                                <input type="hidden" id="inv_edit_index" value="-1">
+                                <div class="flex space-x-1">
+                                    <div class="flex-1">
+                                        <label class="block text-zinc-400 mb-1">Item ID / Barcode</label>
+                                        <input type="text" id="mi_id" placeholder="ex: BAS00419" required class="input-ios font-bold">
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button type="button" onclick="openBarcodeScanner('mi_id')" class="btn-ios-secondary px-3 py-2">📷 Scan</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-400 mb-1">Nama Item</label>
+                                    <input type="text" id="mi_name" list="dl-item-names" placeholder="ex: Oil Filter Engine" required class="input-ios">
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-400 mb-1">Kategori Barang</label>
+                                    <select id="mi_kategori" class="input-ios">
+                                        <option value="Part Service">Part Service</option>
+                                        <option value="Sparepart">Sparepart</option>
+                                        <option value="Consumable Goods">Consumable Goods</option>
+                                        <option value="Lubricant/Oil">Lubricant/Oil</option>
+                                        <option value="General">General</option>
+                                        <option value="Tools">Tools</option>
+                                    </select>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">Part No</label><input type="text" id="mi_partno" placeholder="ex: J8613000" required class="input-ios"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Merk</label><input type="text" id="mi_merk" placeholder="ex: Komatsu" required class="input-ios"></div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">Satuan</label><input type="text" id="mi_satuan" placeholder="Pcs/Ltr" value="Pcs" required class="input-ios"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Stok Gudang</label><input type="number" id="mi_stock" placeholder="0" value="0" required class="input-ios"></div>
+                                </div>
+                                <div><label class="block text-zinc-400 mb-1">Harga Satuan (Rp)</label><input type="number" id="mi_harga" placeholder="100000" required class="input-ios"></div>
+                                <div>
+                                    <label class="block text-zinc-400 mb-1">Foto Barang</label>
+                                    <input type="file" id="mi_photo_file" accept="image/*" class="input-ios">
+                                    <input type="hidden" id="mi_photo_base64">
+                                </div>
+                                <div class="flex space-x-2 pt-2 border-t border-zinc-800">
+                                    <button type="submit" class="btn-ios-primary flex-1">Simpan / Update Item</button>
+                                    <button type="button" id="btn-delete-inv" onclick="logicDeleteInvForm()" class="btn-ios-danger hidden">Hapus</button>
+                                </div>
+                            </form>
+
+                            <div class="border-t border-zinc-800 pt-3 space-y-2">
+                                <div class="flex justify-between items-center flex-wrap gap-1">
+                                    <h4 class="font-bold text-zinc-300 text-xs flex items-center space-x-1">
+                                        <span>📋 Log Transaksi & MR Item:</span>
+                                        <span id="inv-log-itemid-title" class="text-white">[-]</span>
+                                    </h4>
+                                    <div class="flex space-x-1">
+                                        <button onclick="setLogFilter('ALL')" id="btn-log-all" class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-700 text-white">Semua</button>
+                                        <button onclick="setLogFilter('MASUK')" id="btn-log-masuk" class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-900 text-zinc-400">📥 Masuk</button>
+                                        <button onclick="setLogFilter('KELUAR')" id="btn-log-keluar" class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-900 text-zinc-400">📤 Keluar</button>
+                                        <button onclick="setLogFilter('MR')" id="btn-log-mr" class="px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-900 text-zinc-400">📝 MR</button>
+                                    </div>
+                                </div>
+                                <div id="inv-item-log-container" class="space-y-2 max-h-52 overflow-y-auto pr-1">
+                                    <p class="text-zinc-500 italic text-[10px]">Klik salah satu barang di tabel untuk melihat riwayat transaksi keluar/masuk dan request MR.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. VIEW: MASTER DATA -->
+                <div id="view-master" class="hidden space-y-4">
+                    <div class="flex space-x-2 border-b border-zinc-800 pb-2">
+                        <button onclick="switchMasterSub('unit')" class="px-3 py-1.5 rounded-lg font-bold bg-zinc-700 text-white master-sub-btn" id="btn-sub-unit">Master Unit</button>
+                        <button onclick="switchMasterSub('mp')" class="px-3 py-1.5 rounded-lg font-bold bg-zinc-900 text-zinc-400 master-sub-btn" id="btn-sub-mp">Master Manpower</button>
+                        <button onclick="switchMasterSub('srvpart')" class="px-3 py-1.5 rounded-lg font-bold bg-zinc-900 text-zinc-400 master-sub-btn" id="btn-sub-srvpart">Template PM Part Per Model</button>
+                    </div>
+
+                    <!-- Sub 1: Master Unit -->
+                    <div id="sub-master-unit" class="space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold">Master Unit Alat Berat & Dump Truck</h4>
+                            <div class="flex space-x-2">
+                                <button onclick="exportModuleExcel('units')" class="btn-ios-secondary text-xs">📥 Export</button>
+                                <button onclick="triggerImportExcel('units')" class="btn-ios-secondary text-xs">📤 Import</button>
+                                <button onclick="openModalMasterUnit()" class="btn-ios-primary text-xs">+ Unit Baru</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <div id="master-unit-list" class="lg:col-span-5 space-y-2 max-h-[60vh] overflow-y-auto pr-1"></div>
+                            <div class="glass-card-ios p-4 lg:col-span-7 space-y-3">
+                                <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                    <h4 class="font-bold text-white text-xs" id="unit-log-title">📌 Histori Operasional & Perbaikan Unit: <span class="text-zinc-400">[Pilih Unit]</span></h4>
+                                </div>
+                                <div id="unit-history-log-container" class="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                                    <p class="text-zinc-500 italic text-[10px]">Klik salah satu Unit di sebelah kiri untuk melihat histori WO, MR, & Part Instalasi.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub 2: Master Manpower -->
+                    <div id="sub-master-mp" class="space-y-3 hidden">
+                        <div class="flex justify-between items-center">
+                            <h4 class="font-bold">Master Manpower Mekanik & Helper</h4>
+                            <div class="flex space-x-2">
+                                <button onclick="exportModuleExcel('manpower')" class="btn-ios-secondary text-xs">📥 Export</button>
+                                <button onclick="triggerImportExcel('manpower')" class="btn-ios-secondary text-xs">📤 Import</button>
+                                <button onclick="openModalMasterMP()" class="btn-ios-primary text-xs">+ Manpower Baru</button>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                            <div id="master-mp-list" class="lg:col-span-5 space-y-2 max-h-[60vh] overflow-y-auto pr-1"></div>
+                            <div class="glass-card-ios p-4 lg:col-span-7 space-y-3">
+                                <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                    <h4 class="font-bold text-white text-xs" id="mp-log-title">👨‍🔧 Histori Activity & Pengerjaan Mekanik: <span class="text-zinc-400">[Pilih Mekanik]</span></h4>
+                                </div>
+                                <div id="mp-history-log-container" class="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
+                                    <p class="text-zinc-500 italic text-[10px]">Klik salah satu Mekanik di sebelah kiri untuk melihat histori pengerjaan unit & instalasi part.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub 3: Master Service Part Template -->
+                    <div id="sub-master-srvpart" class="space-y-3 hidden">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h4 class="font-bold">Template Standar Sparepart PM Service Berdasarkan Model Unit & Interval PS</h4>
+                            </div>
+                            <button onclick="openModalMasterServicePart()" class="btn-ios-primary text-xs">+ Tambah Template PM Part</button>
+                        </div>
+                        <div class="glass-card-ios p-0 scrollable-table-container">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-zinc-900/80 text-zinc-400 uppercase">
+                                    <tr><th class="p-3">Model Unit</th><th class="p-3">Interval Service</th><th class="p-3">Item Sparepart</th><th class="p-3">Qty Wajib</th><th class="p-3 text-center">Aksi</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-800/60" id="table-master-srvpart"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. VIEW: HISTORI & LAPORAN -->
+                <div id="view-history" class="hidden space-y-4">
+                    <div class="glass-card-ios p-4 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <h3 class="font-bold text-zinc-200">Histori Semua Work Order & Cetak Laporan</h3>
+                            <button onclick="clearHistoryFilter()" class="text-xs text-zinc-400 font-bold hover:text-white">Reset / Tampilkan Semua Data</button>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div><label class="block text-zinc-400 mb-1">Dari Tanggal (Opsional)</label><input type="date" id="hist_start" class="input-ios"></div>
+                            <div><label class="block text-zinc-400 mb-1">Sampai Tanggal (Opsional)</label><input type="date" id="hist_end" class="input-ios"></div>
+                            <div class="flex items-end space-x-2">
+                                <button onclick="renderHistory()" class="btn-ios-primary flex-1 py-2 text-xs">Filter Tanggal</button>
+                                <button onclick="exportModuleExcel('work_orders')" class="btn-ios-secondary py-2 px-4 text-xs">Export Excel</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-card-ios p-0 scrollable-table-container">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-zinc-900/80 text-zinc-400 uppercase">
+                                <tr><th class="p-3">NO WO / Unit</th><th class="p-3">Problem / Komponen</th><th class="p-3">Down - Up Time</th><th class="p-3">Status</th><th class="p-3 text-center">Cetak PDF</th></tr>
+                            </thead>
+                            <tbody class="divide-y divide-zinc-800/60" id="table-history"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 10. VIEW: MANAGEMENT USER -->
+                <div id="view-users" class="hidden space-y-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="font-bold text-zinc-200">Management User & Hak Akses</h3>
+                            <p class="text-[10px] text-zinc-400">Pengaturan pengguna sistem dan otorisasi fitur</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+                        <div class="glass-card-ios p-0 lg:col-span-7 scrollable-table-container">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-zinc-900/80 text-zinc-400 uppercase">
+                                    <tr><th class="p-3">Nama</th><th class="p-3">Username / Password</th><th class="p-3">Role</th><th class="p-3">Hak Akses</th></tr>
+                                </thead>
+                                <tbody class="divide-y divide-zinc-800/60" id="table-users"></tbody>
+                            </table>
+                        </div>
+                        <div class="glass-card-ios p-5 lg:col-span-5 space-y-3">
+                            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                                <h4 class="font-bold text-white text-sm" id="user-form-title">Form Management User</h4>
+                                <button onclick="resetUserForm()" class="text-xs text-zinc-400 font-bold hover:text-white">+ Baru / Reset</button>
+                            </div>
+                            <form onsubmit="event.preventDefault(); logicSaveUser();" class="space-y-3">
+                                <input type="hidden" id="user_edit_index" value="-1">
+                                <div><label class="block text-zinc-400 mb-1">Nama Lengkap</label><input type="text" id="user_fullname" placeholder="ex: Ahmad Fauzi" required class="input-ios"></div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <div><label class="block text-zinc-400 mb-1">Username</label><input type="text" id="user_name" placeholder="ex: ahmad" required class="input-ios"></div>
+                                    <div><label class="block text-zinc-400 mb-1">Password</label><input type="password" id="user_pass" placeholder="***" required class="input-ios"></div>
+                                </div>
+                                <div>
+                                    <label class="block text-zinc-400 mb-1">Role / Peran</label>
+                                    <select id="user_role" class="input-ios">
+                                        <option value="Super Admin">Super Admin</option>
+                                        <option value="Planner Plant">Planner Plant</option>
+                                        <option value="Supervisor">Supervisor</option>
+                                        <option value="Mekanik">Mekanik</option>
+                                        <option value="Warehouse Admin">Warehouse Admin</option>
+                                    </select>
+                                </div>
+                                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                                    <span class="font-bold text-zinc-300 block mb-1">Hak Akses Modul:</span>
+                                    <div class="flex flex-wrap gap-4 text-xs">
+                                        <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" id="chk_create" checked class="rounded border-zinc-700 bg-zinc-900 text-white"><span>Buat Data</span></label>
+                                        <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" id="chk_edit" checked class="rounded border-zinc-700 bg-zinc-900 text-white"><span>Edit Data</span></label>
+                                        <label class="flex items-center space-x-1.5 cursor-pointer"><input type="checkbox" id="chk_delete" checked class="rounded border-zinc-700 bg-zinc-900 text-white"><span>Hapus Data</span></label>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2 pt-2 border-t border-zinc-800">
+                                    <button type="submit" class="btn-ios-primary flex-1">Simpan / Update User</button>
+                                    <button type="button" id="btn-delete-user" onclick="logicDeleteUser()" class="btn-ios-danger hidden">Hapus User</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+
+            <input type="file" id="global-excel-import" accept=".xlsx, .xls, .csv" class="hidden" onchange="processImportExcel(event)">
+
+            <!-- MOBILE BOTTOM NAV -->
+            <nav class="nav-container-mobile md:hidden fixed bottom-0 w-full z-40">
+                <button id="mnav-dashboard" onclick="switchView('dashboard')" class="nav-btn-mobile active"><div>📊</div><div>DASH</div></button>
+                <button id="mnav-service" onclick="switchView('service')" class="nav-btn-mobile"><div>⚙️</div><div>SERVICE</div></button>
+                <button id="mnav-kanban" onclick="switchView('kanban')" class="nav-btn-mobile"><div>📋</div><div>FLOW</div></button>
+                <button id="mnav-mr" onclick="switchView('mr')" class="nav-btn-mobile"><div>📝</div><div>MR</div></button>
+                <button id="mnav-purchasing" onclick="switchView('purchasing')" class="nav-btn-mobile"><div>🛒</div><div>BELI</div></button>
+            </nav>
+        </div>
+    </div>
+
+    <!-- MODALS IOS STYLED -->
+    <!-- MODAL CLOSE WO -->
+    <div id="modalCloseWO" class="fixed inset-0 modal-overlay-ios hidden items-center justify-center z-50 p-4">
+        <div class="glass-card-ios w-full max-w-xl p-6 space-y-3 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <h3 class="font-bold text-sm text-white">Form Penutupan WO (Close Work Order)</h3>
+                <button onclick="closeModalCloseWO()" class="text-zinc-400 hover:text-white text-lg">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); logicExecCloseWO();" class="space-y-3">
+                <input type="hidden" id="cwo_no">
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-zinc-400 mb-1">NO WO</label><input type="text" id="cwo_no_disp" readonly class="input-ios !bg-zinc-950 font-bold"></div>
+                    <div><label class="block text-zinc-400 mb-1">Kode Unit</label><input type="text" id="cwo_unit" readonly class="input-ios !bg-zinc-950 font-bold"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div><label class="block text-zinc-400 mb-1">Time Down (Awal)</label><input type="datetime-local" id="cwo_downtime" required class="input-ios"></div>
+                    <div><label class="block text-zinc-400 mb-1">Time Up (Selesai RFU)</label><input type="datetime-local" id="cwo_uptime" required class="input-ios"></div>
+                    <div><label class="block text-zinc-400 mb-1">Istirahat (Jam)</label><input type="number" step="0.1" id="cwo_istirahat" value="0" class="input-ios"></div>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 mb-1">Catatan Perbaikan</label>
+                    <textarea id="cwo_action" rows="2" class="input-ios" placeholder="Deskripsi perbaikan..." required></textarea>
+                </div>
+                
+                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                    <div class="flex justify-between items-center"><span class="font-bold text-zinc-300">Pergantian Sparepart</span><button type="button" onclick="addCWOPartRow()" class="text-zinc-300 font-bold text-xs">+ Part</button></div>
+                    <div id="cwo-parts-container" class="space-y-2 max-h-36 overflow-y-auto pr-1"></div>
+                </div>
+                
+                <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 space-y-2">
+                    <div class="flex justify-between items-center"><span class="font-bold text-zinc-300">Tim Mekanik</span><button type="button" onclick="addCWOMpRow()" class="text-zinc-300 font-bold text-xs">+ Mekanik</button></div>
+                    <div id="cwo-mp-container" class="space-y-2 max-h-32 overflow-y-auto pr-1"></div>
+                </div>
+
+                <div class="flex justify-end space-x-2 pt-2 border-t border-zinc-800">
+                    <button type="button" onclick="closeModalCloseWO()" class="btn-ios-secondary">Batal</button>
+                    <button type="submit" class="btn-ios-primary">Simpan & Set Status CLOSE (RFU)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- IMAGE PREVIEW MODAL -->
+    <div id="modalPhotoViewer" class="fixed inset-0 modal-overlay-ios hidden items-center justify-center z-50 p-4">
+        <div class="relative max-w-3xl w-full text-center">
+            <button onclick="closePhotoModal()" class="absolute -top-10 right-0 text-white text-2xl font-bold">&times; Tutup</button>
+            <img id="modalPhotoImg" src="" class="max-h-[85vh] mx-auto rounded-2xl border border-zinc-700 shadow-2xl">
+        </div>
+    </div>
+
+    <!-- BARCODE SCANNER MODAL -->
+    <div id="modalBarcodeScanner" class="fixed inset-0 modal-overlay-ios hidden items-center justify-center z-50 p-4">
+        <div class="glass-card-ios w-full max-w-md p-6 space-y-4 text-center">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <h3 class="font-bold text-sm text-white">📷 Scan Barcode / QR Code Item</h3>
+                <button onclick="closeBarcodeScanner()" class="text-zinc-400 hover:text-white text-lg">&times;</button>
+            </div>
+            <div id="reader" class="overflow-hidden rounded-xl border border-zinc-700 bg-black"></div>
+            <p class="text-[10px] text-zinc-400">Arahkan kamera ke Barcode atau QR Code barang</p>
+            <button onclick="closeBarcodeScanner()" class="btn-ios-danger w-full py-2">Batal / Tutup Kamera</button>
+        </div>
+    </div>
+
+    <!-- MODAL WO -->
+    <div id="modalWO" class="fixed inset-0 modal-overlay-ios hidden items-center justify-center z-50 p-4">
+        <div class="glass-card-ios w-full max-w-2xl p-6 space-y-3 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <h3 class="font-bold text-sm text-white" id="wo_modal_title">Form Input Work Order Baru</h3>
+                <button onclick="closeModalWO()" class="text-zinc-400 hover:text-white text-lg">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); logicSaveWO();" class="space-y-3">
+                <input type="hidden" id="wo_edit_id" value="">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-zinc-400 mb-1">NO WO (Otomatis)</label>
+                        <input type="text" id="wo_no" readonly class="input-ios !bg-zinc-950 font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1">Kategori Unit</label>
+                        <select id="wo_cat" onchange="filterUnitsByCategory('wo_cat', 'wo_unit'); filterComponents();" class="input-ios">
+                            <option value="A2B">A2B (Excavator, Dozer, Grader)</option>
+                            <option value="DT">DT (Dump Truck)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="col-span-1">
+                        <label class="block text-zinc-400 mb-1">Kode Unit</label>
+                        <select id="wo_unit" onchange="autoFillUnitInfo(this.value)" class="input-ios w-full" required></select>
+                    </div>
+                    <div><label class="block text-zinc-400 mb-1">Merk</label><input type="text" id="wo_merk" readonly class="input-ios !bg-zinc-950"></div>
+                    <div><label class="block text-zinc-400 mb-1">Type / Model</label><input type="text" id="wo_type" readonly class="input-ios !bg-zinc-950"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div><label class="block text-zinc-400 mb-1">Job Site</label><input type="text" id="wo_jobsite" list="dl-jobsite" value="PIT STERFU" required class="input-ios"></div>
+                    <div><label class="block text-zinc-400 mb-1">Shift</label><select id="wo_shift" class="input-ios"><option value="1">Shift 1</option><option value="2">Shift 2</option></select></div>
+                    <div><label class="block text-zinc-400 mb-1">Jenis BD</label><select id="wo_jenisbd" class="input-ios"><option value="Schedule">Schedule</option><option value="Unschedule">Unschedule</option></select></div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-zinc-400 mb-1">Komponen Utama</label>
+                        <div class="flex space-x-1">
+                            <select id="wo_comp" onchange="filterSubComponents()" class="input-ios flex-1"></select>
+                            <button type="button" onclick="addNewComponentPrompt()" class="btn-ios-secondary !px-2.5 !py-1 text-[10px] font-bold" title="Tambah Komponen Baru">+ Tambah</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1">Sub Komponen</label>
+                        <div class="flex space-x-1">
+                            <select id="wo_subcomp" class="input-ios flex-1"></select>
+                            <button type="button" onclick="addNewSubComponentPrompt()" class="btn-ios-secondary !px-2.5 !py-1 text-[10px] font-bold" title="Tambah Sub Komponen Baru">+ Tambah</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div><label class="block text-zinc-400 mb-1">Problem / Kerusakan</label><input type="text" id="wo_problem" list="dl-problem" placeholder="ex: OLI BOCOR / ENGINE OVERHEAT" required class="input-ios"></div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div><label class="block text-zinc-400 mb-1">Downtime Date & Time</label><input type="datetime-local" id="wo_downtime" required class="input-ios"></div>
+                    <div><label class="block text-zinc-400 mb-1">Uptime Date & Time</label><input type="datetime-local" id="wo_uptime" class="input-ios"></div>
+                    <div><label class="block text-zinc-400 mb-1">Istirahat (Jam)</label><input type="number" step="0.1" id="wo_istirahat" value="0" class="input-ios"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <div><label class="block text-zinc-400 mb-1">HM Unit Last</label><input type="number" step="0.1" id="wo_hm" placeholder="5846.3" required class="input-ios"></div>
+                    <div><label class="block text-zinc-400 mb-1">Status Case</label><select id="wo_statuscase" class="input-ios"><option value="OPEN">OPEN</option><option value="IN_PROGRESS">IN_PROGRESS</option><option value="WAITING_PART">WAITING_PART</option><option value="CLOSE">CLOSE</option></select></div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1">Foto Bukti BD</label>
+                        <input type="file" id="wo_photo_file" accept="image/*" capture="environment" class="input-ios">
+                        <input type="hidden" id="wo_photo_base64">
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-zinc-800">
+                    <button type="button" onclick="closeModalWO()" class="btn-ios-secondary">Batal</button>
+                    <button type="submit" class="btn-ios-primary">Simpan Work Order</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL SERVICE SCHEDULE -->
+    <div id="modalServiceSchedule" class="fixed inset-0 modal-overlay-ios hidden items-center justify-center z-50 p-4">
+        <div class="glass-card-ios w-full max-w-lg p-6 space-y-3">
+            <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+                <h3 class="font-bold text-sm text-white">Buat Jadwal Service Unit</h3>
+                <button onclick="closeModalServiceSchedule()" class="text-zinc-400 hover:text-white text-lg">&times;</button>
+            </div>
+            <form onsubmit="event.preventDefault(); logicSaveServiceSchedule();" class="space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-zinc-400 mb-1">Kategori Unit</label>
+                        <select id="srv_cat" onchange="filterUnitsByCategory('srv_cat', 'srv_unit'); calcServiceHMAndDate();" class="input-ios">
+                            <option value="A2B">A2B (Excavator/Dozer/Grader)</option>
+                            <option value="DT">DT (Dump Truck)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-zinc-400 mb-1">Kode Unit</label>
+                        <select id="srv_unit" class="input-ios w-full" required></select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-zinc-400 mb-1">Tipe Service / PS Interval</label>
+                        <select id="srv_type" onchange="calcServiceHMAndDate()" class="input-ios">
+                            <option value="PS 100">PS 100 Hours</option>
+                            <option value="PS 250">PS 250 Hours</option>
+                            <option value="PS 500">PS 500 Hours</option>
+                            <option value="PS 1000">PS 1000 Hours</option>
+                            <option value="PS 2000">PS 2000 Hours</option>
+                        </select>
+                    </div>
+                    <div><label class="block text-zinc-400 mb-1">Current HM</label><input type="number" step="0.1" id="srv_cur_hm" oninput="calcServiceHMAndDate()" placeholder="ex: 4230" required class="input-ios"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="block text-zinc-400 mb-1">HM Service Terakhir</label><input type="number" step="0.1" id="srv_last_hm" oninput="calcServiceHMAndDate()" value="0" class="input-ios"></div>
+                    <div><label class="block text-zinc-400 mb-1">Target Next HM Service</label><input type="number" step="0.1" id="srv_next_hm" readonly class="input-ios !bg-zinc-950 font-bold"></div>
+                </div>
+                <div><label class="block text-zinc-400 mb-1">Estimasi Tanggal Service</label><input type="date" id="srv_date" readonly class="input-ios !bg-zinc-950 font-bold"></div>
+                <div id="srv_preview_status" class="p-2.5 bg-zinc-950 border border-zinc-800 rounded-xl text-center font-bold text-xs"></div>
+                <div class="flex justify-end space-x-2 pt-2 border-t border-zinc-800">
+                    <button type="button" onclick="closeModalServiceSchedule()" class="btn-ios-secondary">Batal</button>
+                    <button type="submit" class="btn-ios-primary">Simpan Jadwal Service</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL MASTER SERVICE PART -->
+    <div id="modalMasterServicePart" class="fixed inset-0 modal-overlay-ios hidden items-center justify-center z-50 p-4">
+        <div class="glass-card-ios w-full max-w-md p-6 space-y-3">
+            <h3 class="font-bold text-sm text-white border-b border-zinc-800 pb-2">Template Sparepart Service Per Model Unit</h3>
+            <form onsubmit="event.preventDefault(); logicSaveMasterServicePart();" class="space-y-3">
+                <div>
+                    <label class="block text-zinc-400 mb-1">Model / Type Unit</label>
+                    <select id="msp_model" class="input-ios w-full" required></select>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 mb-1">Interval Service (PS/PM)</label>
+                    <select id="msp_type" class="input-ios">
+                        <option value="PS 100">PS 100</option>
+                        <option value="PS 250">PS 250</option>
+                        <option value="PS 500">PS 500</option>
+                        <option value="PS 1000">PS 1000</option>
+                        <option value="PS 2000">PS 2000</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 mb-1">Item Master Barang</label>
+                    <div class="flex space-x-1">
+                        <select id="msp_itemid" class="input-ios w-full" required></select>
+                        <button type="button" onclick="openBarcodeScanner('msp_itemid')" class="btn-ios-secondary px-3">📷</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-zinc-400 mb-1">Jumlah Dibutuhkan (Qty)</label>
+                    <input type="number" id="msp_qty" value="1" min="1" required class="input-ios">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModalMasterServicePart()" class="btn-ios-secondary">Batal</button>
+                    <button type="submit" class="btn-ios-primary">Simpan Template Part</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL MASTER UNIT -->
+    <div id="modalMasterUnit" class="fixed inset-0 modal-overlay-ios hidden items-center justify-center z-50 p-4">
+        <div class="glass-card-ios w-full max-w-md p-6 space-y-3">
+            <h3 class="font-bold text-sm text-white border-b border-zinc-800 pb-2">Master Unit Baru</h3>
+            <form onsubmit="event.preventDefault(); logicSaveMasterUnit();" class="space-y-3">
+                <input type="text" id="mu_code" placeholder="Kode Unit (ex: EX-200)" required class="input-ios">
+                <select id="mu_cat" class="input-ios"><option value="A2B">A2B (Alat Berat)</option><option value="DT">DT (Dump Truck)</option></select>
+                <div class="grid grid-cols-2 gap-2">
+                    <input type="text" id="mu_merk" placeholder="Merk (Komatsu/Hino)" required class="input-ios">
+                    <input type="text" id="mu_type" placeholder="Type / Model (PC200-8)" required class="input-ios">
+                </div>
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModalMasterUnit()" class="btn-ios-secondary">Batal</button>
+                    <button type="submit" class="btn-ios-primary">Simpan Unit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL MASTER MANPOWER -->
+    <div id="modalMasterMP" class="fixed inset-0 modal-overlay-ios hidden items-center justify-center z-50 p-4">
+        <div class="glass-card-ios w-full max-w-md p-6 space-y-3">
+            <h3 class="font-bold text-sm text-white border-b border-zinc-800 pb-2">Master Manpower Baru</h3>
+            <form onsubmit="event.preventDefault(); logicSaveMasterMP();" class="space-y-3">
+                <input type="text" id="mp_name" placeholder="Nama Lengkap Karyawan" required class="input-ios">
+                <select id="mp_jabatan" class="input-ios"><option value="Mekanik">Mekanik</option><option value="Helper">Helper</option></select>
+                <input type="text" id="mp_spec" list="dl-spec" placeholder="Spesialisasi (Engine/Hydraulic)" class="input-ios">
+                <div class="flex justify-end space-x-2 pt-2">
+                    <button type="button" onclick="closeModalMasterMP()" class="btn-ios-secondary">Batal</button>
+                    <button type="submit" class="btn-ios-primary">Simpan Manpower</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom JS Logic -->
+    <script src="app.js"></script>
+</body>
+</html>
